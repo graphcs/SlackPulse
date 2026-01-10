@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.slackpulse.agent</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <!-- Use the venv Python interpreter -->
+        <string>/Users/johnmaheswaran/code/SlackPulse/.venv/bin/python</string>
+        <string>-m</string>
+        <string>slackpulse</string>
+    </array>
+
+    <!-- Working directory (update to your SlackPulse installation) -->
+    <key>WorkingDirectory</key>
+    <string>/Users/johnmaheswaran/code/SlackPulse</string>
+
+    <!-- Run at login -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Keep running -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Log output -->
+    <key>StandardOutPath</key>
+    <string>/tmp/slackpulse.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/slackpulse.err.log</string>
+
+    <!-- Environment variables (optional: add PYTHONPATH if needed) -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PYTHONPATH</key>
+        <string>/Users/johnmaheswaran/code/SlackPulse</string>
+    </dict>
+</dict>
+</plist>

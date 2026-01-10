@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "slackpulse"
+version = "0.1.0"
+description = "macOS Slack notification reader with TTS"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+
+dependencies = [
+    "pyobjc-framework-Cocoa>=9.0",
+    "watchdog>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "mypy",
+    "ruff",
+]
+
+[project.scripts]
+slackpulse = "slackpulse.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["slackpulse*"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
