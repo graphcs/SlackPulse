@@ -7,8 +7,10 @@ macOS utility that monitors Slack notifications and reads them aloud using text-
 ```bash
 git clone https://github.com/graphcs/SlackPulse.git
 cd SlackPulse
-python3 -m venv .venv && source .venv/bin/activate && pip install -e . && python -m slackpulse
+./install.sh
 ```
+
+This installs SlackPulse and registers it to **start automatically on login**.
 
 **Note:** Requires Full Disk Access for Terminal/Python. Grant it in: System Settings > Privacy & Security > Full Disk Access
 
@@ -17,6 +19,7 @@ python3 -m venv .venv && source .venv/bin/activate && pip install -e . && python
 - Reads Slack messages aloud (sender name + message content)
 - Sends WhatsApp notifications via Twilio (optional)
 - Filters out bot messages and duplicates
+- Starts automatically on login
 - Works with Slack desktop app
 
 ## Requirements
@@ -27,7 +30,17 @@ python3 -m venv .venv && source .venv/bin/activate && pip install -e . && python
 - Full Disk Access permission
 - Twilio account (optional, for WhatsApp)
 
-## Usage
+## Install / Uninstall
+
+```bash
+# Install and start on login
+./install.sh
+
+# Uninstall
+./uninstall.sh
+```
+
+## Manual Usage
 
 ```bash
 source .venv/bin/activate
@@ -38,6 +51,22 @@ python -m slackpulse --verbose
 
 # Test WhatsApp setup
 python -m slackpulse --sms-test
+```
+
+## Managing the Service
+
+```bash
+# Check if running
+launchctl list | grep slackpulse
+
+# View logs
+tail -f /tmp/slackpulse.out.log
+
+# Stop
+launchctl unload ~/Library/LaunchAgents/com.slackpulse.agent.plist
+
+# Start
+launchctl load ~/Library/LaunchAgents/com.slackpulse.agent.plist
 ```
 
 ## Configuration
