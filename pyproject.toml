@@ -12,6 +12,7 @@ license = {text = "MIT"}
 dependencies = [
     "pyobjc-framework-Cocoa>=9.0",
     "watchdog>=3.0",
+    "twilio>=8.0",
 ]
 
 [project.optional-dependencies]

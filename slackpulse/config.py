@@ -57,12 +57,25 @@ class MonitorConfig:
 
 
 @dataclass
+class SMSConfig:
+    """SMS/WhatsApp configuration for Twilio."""
+
+    enabled: bool = False
+    account_sid: str = ""
+    auth_token: str = ""
+    from_number: str = ""
+    to_number: str = ""
+    use_whatsapp: bool = False  # Use WhatsApp instead of SMS (no A2P registration needed)
+
+
+@dataclass
 class Config:
     """Main configuration."""
 
     tts: TTSConfig = field(default_factory=TTSConfig)
     filters: FilterConfig = field(default_factory=FilterConfig)
     monitor: MonitorConfig = field(default_factory=MonitorConfig)
+    sms: SMSConfig = field(default_factory=SMSConfig)
     log_file: Optional[Path] = None
 
     @classmethod
@@ -72,6 +85,7 @@ class Config:
             tts=TTSConfig(**data.get("tts", {})),
             filters=FilterConfig(**data.get("filters", {})),
             monitor=MonitorConfig(**data.get("monitor", {})),
+            sms=SMSConfig(**data.get("sms", {})),
             log_file=Path(data["log_file"]) if data.get("log_file") else None,
         )
 
@@ -123,6 +137,15 @@ dedup_window_seconds = 30
 
 [monitor]
 use_filesystem_fallback = true
+
+# SMS notifications via Twilio (optional)
+# Get credentials at https://console.twilio.com/
+[sms]
+enabled = false
+# account_sid = "ACxxxxxxxxxx"
+# auth_token = "xxxxxxxxxx"
+# from_number = "+1234567890"
+# to_number = "+0987654321"
 
 # Uncomment to enable file logging
 # log_file = "~/.local/share/slackpulse/slackpulse.log"

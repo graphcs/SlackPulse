@@ -9,6 +9,7 @@ from .core.monitor import NotificationMonitor
 from .utils.logging import setup_logging
 from .utils.signals import install_signal_handlers
 from .tts.speaker import Speaker
+from .sms.sender import TwilioSender
 
 
 def main() -> int:
@@ -63,6 +64,12 @@ def main() -> int:
         help="Show default configuration and exit",
     )
 
+    parser.add_argument(
+        "--sms-test",
+        action="store_true",
+        help="Send a test SMS and exit (requires SMS config)",
+    )
+
     args = parser.parse_args()
 
     # Handle special modes
@@ -79,6 +86,28 @@ def main() -> int:
 
     # Load config
     config = load_config(args.config)
+
+    # Handle SMS/WhatsApp test
+    if args.sms_test:
+        if not config.sms.enabled:
+            print("SMS/WhatsApp is not enabled. Add [sms] section to config file.")
+            print(f"Config path: {args.config}")
+            return 1
+        sender = TwilioSender(
+            account_sid=config.sms.account_sid,
+            auth_token=config.sms.auth_token,
+            from_number=config.sms.from_number,
+            to_number=config.sms.to_number,
+            enabled=True,
+            use_whatsapp=config.sms.use_whatsapp,
+        )
+        msg_type = "WhatsApp" if config.sms.use_whatsapp else "SMS"
+        if sender.send_test():
+            print(f"Test {msg_type} sent successfully!")
+            return 0
+        else:
+            print(f"Failed to send test {msg_type}. Check your credentials.")
+            return 1
 
     # Setup logging
     setup_logging(
@@ -100,6 +129,12 @@ def main() -> int:
         tts_rate=config.tts.rate,
         tts_enabled=config.tts.enabled,
         dedup_window=config.filters.dedup_window_seconds,
+        sms_enabled=config.sms.enabled,
+        sms_account_sid=config.sms.account_sid,
+        sms_auth_token=config.sms.auth_token,
+        sms_from_number=config.sms.from_number,
+        sms_to_number=config.sms.to_number,
+        sms_use_whatsapp=config.sms.use_whatsapp,
     )
 
     try:

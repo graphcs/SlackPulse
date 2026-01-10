@@ -13,6 +13,7 @@ from ..detectors.hybrid import HybridDetector
 from ..filters.bot import BotFilter
 from ..filters.deduplication import DeduplicationCache
 from ..tts.speaker import Speaker
+from ..sms.sender import TwilioSender
 from .notification import SlackNotification
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,12 @@ class NotificationMonitor:
         tts_rate: int = 150,
         tts_enabled: bool = True,
         dedup_window: int = 30,
+        sms_enabled: bool = False,
+        sms_account_sid: str = "",
+        sms_auth_token: str = "",
+        sms_from_number: str = "",
+        sms_to_number: str = "",
+        sms_use_whatsapp: bool = False,
     ):
         """
         Initialize the notification monitor.
@@ -50,6 +57,12 @@ class NotificationMonitor:
             tts_rate: Speech rate in WPM.
             tts_enabled: Whether to enable TTS.
             dedup_window: Deduplication window in seconds.
+            sms_enabled: Whether to enable SMS/WhatsApp notifications.
+            sms_account_sid: Twilio Account SID.
+            sms_auth_token: Twilio Auth Token.
+            sms_from_number: Twilio phone number.
+            sms_to_number: Destination phone number.
+            sms_use_whatsapp: Use WhatsApp instead of SMS.
         """
         self.shutdown_event = shutdown_event
         self.discovery_mode = discovery_mode
@@ -65,6 +78,14 @@ class NotificationMonitor:
             voice=tts_voice,
             rate=tts_rate,
             enabled=tts_enabled and not dry_run,
+        )
+        self._sms_sender = TwilioSender(
+            account_sid=sms_account_sid,
+            auth_token=sms_auth_token,
+            from_number=sms_from_number,
+            to_number=sms_to_number,
+            enabled=sms_enabled and not dry_run,
+            use_whatsapp=sms_use_whatsapp,
         )
 
         # Stats
@@ -117,7 +138,7 @@ class NotificationMonitor:
         self._announce_notification(notification)
 
     def _announce_notification(self, notification: SlackNotification) -> None:
-        """Announce notification via TTS or print."""
+        """Announce notification via TTS, SMS, or print."""
         log_msg = f"[{notification.timestamp.strftime('%H:%M:%S')}] {notification}"
 
         if self.dry_run:
@@ -125,7 +146,13 @@ class NotificationMonitor:
             logger.info(f"Dry run: {log_msg}")
         else:
             logger.info(log_msg)
+            # TTS announcement
             self._speaker.speak_notification(
+                notification.sender,
+                notification.message,
+            )
+            # SMS notification
+            self._sms_sender.send_notification(
                 notification.sender,
                 notification.message,
             )
