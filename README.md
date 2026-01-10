@@ -59,6 +59,3 @@ enabled = true
 dedup_window_seconds = 30
 ```
 
-## License
-
-MIT
