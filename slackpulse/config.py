@@ -18,9 +18,10 @@ else:
 class TTSConfig:
     """TTS configuration."""
 
-    voice: str = "Samantha"  # macOS default English voice
-    rate: int = 200  # Words per minute
+    voice: str = "nova"  # OpenAI voice (nova, alloy, echo, fable, onyx, shimmer)
+    rate: int = 150  # Words per minute (only for macOS fallback)
     enabled: bool = True
+    use_openai: bool = True  # Use OpenAI TTS for natural speech
 
 
 @dataclass

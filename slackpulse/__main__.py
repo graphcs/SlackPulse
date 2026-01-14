@@ -128,6 +128,7 @@ def main() -> int:
         tts_voice=config.tts.voice,
         tts_rate=config.tts.rate,
         tts_enabled=config.tts.enabled,
+        tts_use_openai=config.tts.use_openai,
         dedup_window=config.filters.dedup_window_seconds,
         sms_enabled=config.sms.enabled,
         sms_account_sid=config.sms.account_sid,

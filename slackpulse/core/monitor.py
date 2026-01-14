@@ -33,9 +33,10 @@ class NotificationMonitor:
         dry_run: bool = False,
         use_filesystem_fallback: bool = True,
         use_database: bool = False,
-        tts_voice: str = "Samantha",
+        tts_voice: str = "nova",
         tts_rate: int = 150,
         tts_enabled: bool = True,
+        tts_use_openai: bool = True,
         dedup_window: int = 30,
         sms_enabled: bool = False,
         sms_account_sid: str = "",
@@ -53,9 +54,10 @@ class NotificationMonitor:
             dry_run: If True, print instead of TTS.
             use_filesystem_fallback: Use filesystem detector as fallback.
             use_database: Use notification database (requires Full Disk Access).
-            tts_voice: Voice for TTS.
-            tts_rate: Speech rate in WPM.
+            tts_voice: Voice for TTS (OpenAI: nova, alloy, echo, fable, onyx, shimmer).
+            tts_rate: Speech rate in WPM (macOS fallback only).
             tts_enabled: Whether to enable TTS.
+            tts_use_openai: Use OpenAI TTS for natural speech.
             dedup_window: Deduplication window in seconds.
             sms_enabled: Whether to enable SMS/WhatsApp notifications.
             sms_account_sid: Twilio Account SID.
@@ -78,6 +80,7 @@ class NotificationMonitor:
             voice=tts_voice,
             rate=tts_rate,
             enabled=tts_enabled and not dry_run,
+            use_openai=tts_use_openai,
         )
         self._sms_sender = TwilioSender(
             account_sid=sms_account_sid,
