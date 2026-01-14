@@ -7,7 +7,7 @@ import logging
 from typing import Optional, List
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,71 @@ load_dotenv()
 
 # OpenAI TTS voices
 OPENAI_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+
+# Path to .env file (in project root)
+ENV_FILE = Path(__file__).parent.parent.parent / ".env"
+
+
+def _get_env_file_path() -> Path:
+    """Get the path to the .env file."""
+    # Try project root first
+    if ENV_FILE.exists():
+        return ENV_FILE
+    # Create if doesn't exist
+    return ENV_FILE
+
+
+def _prompt_for_api_key() -> Optional[str]:
+    """Prompt user to enter their OpenAI API key."""
+    print("\n" + "=" * 60)
+    print("OpenAI API key not found or invalid.")
+    print("Get your API key at: https://platform.openai.com/api-keys")
+    print("=" * 60)
+    print("\nPaste your OpenAI API key (or press Enter to skip):")
+
+    try:
+        api_key = input("> ").strip()
+        if api_key:
+            return api_key
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+    return None
+
+
+def _validate_api_key(api_key: str) -> bool:
+    """Validate an OpenAI API key by making a test request."""
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+        # Make a minimal API call to validate
+        client.models.list()
+        return True
+    except Exception as e:
+        logger.debug(f"API key validation failed: {e}")
+        return False
+
+
+def _save_api_key(api_key: str) -> bool:
+    """Save the API key to .env file."""
+    try:
+        env_path = _get_env_file_path()
+
+        # Create .env if it doesn't exist
+        if not env_path.exists():
+            env_path.write_text("# SlackPulse Environment Variables\n# DO NOT commit this file to git\n\n")
+
+        # Save using dotenv
+        set_key(str(env_path), "OPENAI_API_KEY", api_key)
+
+        # Also set in current environment
+        os.environ["OPENAI_API_KEY"] = api_key
+
+        print(f"API key saved to {env_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to save API key: {e}")
+        return False
 
 
 class Speaker:
@@ -31,6 +96,7 @@ class Speaker:
         rate: int = 150,
         enabled: bool = True,
         use_openai: bool = True,
+        prompt_for_key: bool = True,
     ):
         """
         Initialize the speaker.
@@ -41,11 +107,13 @@ class Speaker:
             rate: Words per minute (only used for macOS fallback).
             enabled: Whether TTS is enabled.
             use_openai: Use OpenAI TTS (recommended for natural speech).
+            prompt_for_key: Prompt user for API key if missing/invalid.
         """
         self.voice = voice
         self.rate = rate
         self.enabled = enabled
         self.use_openai = use_openai
+        self.prompt_for_key = prompt_for_key
         self._process: Optional[subprocess.Popen] = None
         self._openai_client = None
 
@@ -53,17 +121,55 @@ class Speaker:
             self._init_openai()
 
     def _init_openai(self) -> None:
-        """Initialize OpenAI client."""
+        """Initialize OpenAI client, prompting for key if needed."""
         api_key = os.getenv("OPENAI_API_KEY")
+
+        # If no key, prompt for one
+        if not api_key and self.prompt_for_key:
+            api_key = _prompt_for_api_key()
+            if api_key:
+                if _validate_api_key(api_key):
+                    _save_api_key(api_key)
+                    print("API key validated and saved successfully!")
+                else:
+                    print("Invalid API key. Falling back to macOS TTS.")
+                    api_key = None
+
         if not api_key:
-            logger.warning("OPENAI_API_KEY not set, falling back to macOS TTS")
+            if self.prompt_for_key:
+                print("No API key provided. Using macOS TTS (robotic voice).")
+            else:
+                logger.warning("OPENAI_API_KEY not set, falling back to macOS TTS")
             self.use_openai = False
             return
 
         try:
             from openai import OpenAI
             self._openai_client = OpenAI(api_key=api_key)
-            logger.info("OpenAI TTS initialized")
+
+            # Validate the key works
+            try:
+                self._openai_client.models.list()
+                logger.info("OpenAI TTS initialized")
+            except Exception as e:
+                if self.prompt_for_key:
+                    print(f"API key invalid: {e}")
+                    # Prompt for new key
+                    new_key = _prompt_for_api_key()
+                    if new_key and _validate_api_key(new_key):
+                        _save_api_key(new_key)
+                        self._openai_client = OpenAI(api_key=new_key)
+                        print("API key validated and saved successfully!")
+                        logger.info("OpenAI TTS initialized")
+                    else:
+                        print("Using macOS TTS instead.")
+                        self.use_openai = False
+                        self._openai_client = None
+                else:
+                    logger.error(f"OpenAI API key invalid: {e}")
+                    self.use_openai = False
+                    self._openai_client = None
+
         except ImportError:
             logger.error("openai package not installed. Run: pip install openai")
             self.use_openai = False
